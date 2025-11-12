@@ -6,6 +6,7 @@
 // Open with a local server so fetch() works (e.g., VS Code Live Server).
 
 // ------------- State & DOM refs -------------
+let allCards = [];
 let cards = [];
 const cardTable = document.querySelector(".card-table");
 let firstCard = null;
@@ -13,21 +14,33 @@ let secondCard = null;
 let noFlipping = false;
 let triesRemaining = 10;
 let winCounter = null;
+let timerInterval = null;
+let timeElapsed = 0; // seconds
 
 const counter = document.querySelector(".tries-remaining");
+const timeEl = document.querySelector('.time-elapsed');
+const bestEl = document.querySelector('.best-time');
+const difficultySelect = document.getElementById('difficulty');
+
 counter.textContent = triesRemaining;
 
-// Restart (initial simple behavior)
-document.getElementById('restart').addEventListener('click', () => window.location.reload());
+// Restart behavior (in-page)
+document.getElementById('restart').addEventListener('click', () => initGame());
 
-// ------------- Fetch the deck -------------
+// Modal buttons
+document.getElementById('modal-close').addEventListener('click', () => closeModal());
+document.getElementById('modal-restart').addEventListener('click', () => { closeModal(); initGame(); });
+
+// Difficulty change
+difficultySelect.addEventListener('change', () => initGame());
+
+// ------------- Fetch the deck once -------------
 fetch("./data/card_info.json")
   .then(res => res.json())
   .then(data => {
-    winCounter = data.length;            // # of unique pairs to match
-    cards = [...data, ...data];          // duplicate to make pairs
-    const shuffled = shuffle(cards);     // TODO: implement shuffle()
-    dealCards(shuffled);                 // TODO: build and attach card elements
+    allCards = data;
+    // start initial game
+    initGame();
   })
   .catch(err => console.error("Fetch error:", err));
 
@@ -39,15 +52,13 @@ function shuffle(arr) {
   // 2) Loop from end -> start. For each index i, pick random j in [0, i].
   // 3) Swap elements at i and j (use destructuring).
   // 4) Return the shuffled copy.
-  // Your code here ↓
   const copy = [...arr];
   // TODO: loop i from copy.length - 1 down to 1
   for (let i = copy.length - 1; i > 0; i--) {
   // TODO: generate j = Math.floor(Math.random() * (i + 1))
     const j = Math.floor(Math.random() * (i + 1));
   // TODO: swap copy[i] and copy[j]
-  return copy; // replace with real shuffled copy
-    [copy[i], copy[j]] = [copy[j], copy[i]];
+  [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
 }
@@ -60,6 +71,8 @@ function dealCards(deck) {
   //   <div class="back"><img class="back-image" src="./images/<name>.svg" alt="<name>"></div>
   //   <div class="front"></div>
   // </div>
+  // Clear any existing cards first
+  cardTable.innerHTML = '';
   const frag = document.createDocumentFragment();
 
   // TODO: for...of deck
@@ -78,8 +91,9 @@ function dealCards(deck) {
     back.classList.add("back");
     const img = document.createElement("img");
     img.classList.add("back-image");
-    img.src = `./images/${cardInfo.name}.svg`;
-    img.alt = cardInfo.name;
+  // Prefer an explicit image path from the card data (allows .png/.svg).
+  img.src = cardInfo.image ? cardInfo.image : `./images/${cardInfo.name}.svg`;
+  img.alt = cardInfo.name;
     back.appendChild(img);
 
     const front = document.createElement("div");
@@ -92,6 +106,41 @@ function dealCards(deck) {
     frag.appendChild(card);
   }
   cardTable.appendChild(frag);
+}
+
+// Build a subset deck based on difficulty and start the round
+function initGame() {
+  // reset state
+  resetFlags();
+  stopTimer();
+  timeElapsed = 0;
+  timeEl.textContent = formatTime(timeElapsed);
+
+  // determine difficulty -> pair counts and grid columns
+  const diff = difficultySelect.value || '4x4';
+  const [cols, rows] = diff.split('x').map(n => parseInt(n, 10));
+  const pairCount = Math.floor((cols * rows) / 2);
+
+  // set tries based on difficulty (simple heuristic)
+  if (diff === '4x3') triesRemaining = Math.max(6, pairCount * 1);
+  else if (diff === '5x4') triesRemaining = Math.max(12, pairCount * 2);
+  else triesRemaining = Math.max(8, pairCount * 1 + 4);
+  counter.textContent = triesRemaining;
+
+  // pick a random subset of allCards (shuffle and slice)
+  const shuffledAll = shuffle(allCards);
+  const subset = shuffledAll.slice(0, pairCount);
+  winCounter = subset.length;
+
+  // prepare cards duplicated and shuffled
+  cards = shuffle([...subset, ...subset]);
+
+  // adjust grid columns
+  cardTable.style.gridTemplateColumns = `repeat(${cols}, var(--card-w))`;
+
+  dealCards(cards);
+  // start timer
+  startTimer();
 }
 
 // ------------- TODO #3: Flip logic & guarding -------------
@@ -143,6 +192,7 @@ function unflipCards() {
     counter.textContent = triesRemaining;
     if (triesRemaining === 0) {
       showImageOverlay();
+      showModal('You lost', 'Out of tries — better luck next time.');
       return;
     }
     firstCard.classList.remove("flipped");
@@ -160,7 +210,18 @@ function matchCards() {
 
   winCounter--;
   if (winCounter === 0) {
-    alert("You win!");
+    // Stop timer and show custom modal with time/best
+    stopTimer();
+    const formatted = formatTime(timeElapsed);
+    const diff = difficultySelect.value || '4x4';
+    // update best time in localStorage
+    const key = `bestTime-${diff}`;
+    const prev = localStorage.getItem(key);
+    if (!prev || timeElapsed < Number(prev)) {
+      localStorage.setItem(key, String(timeElapsed));
+    }
+    updateBestDisplay();
+    showModal('You win!', `Completed in ${formatted}`);
     const starInterval = setInterval(createStar, 200);
     setTimeout(() => clearInterval(starInterval), 5000);
   }
@@ -198,6 +259,46 @@ function showImageOverlay() {
     overlay.style.opacity = "1";
   });
 }
+
+// ----- Timer helpers -----
+function startTimer() {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    timeElapsed++;
+    timeEl.textContent = formatTime(timeElapsed);
+  }, 1000);
+}
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+}
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+function updateBestDisplay() {
+  const diff = difficultySelect.value || '4x4';
+  const key = `bestTime-${diff}`;
+  const prev = localStorage.getItem(key);
+  bestEl.textContent = prev ? formatTime(Number(prev)) : '—';
+}
+
+// ----- Modal -----
+function showModal(title, body) {
+  const modal = document.getElementById('modal');
+  modal.querySelector('.modal-title').textContent = title;
+  modal.querySelector('.modal-body').textContent = body;
+  modal.setAttribute('aria-hidden', 'false');
+}
+function closeModal() {
+  const modal = document.getElementById('modal');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+// initialize best display when script loads
+// (if difficultySelect isn't ready yet, guard)
+if (difficultySelect) updateBestDisplay();
 
 // Celebration stars (provided)
 function createStar() {

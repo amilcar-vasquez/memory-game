@@ -3,19 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Memory Card Game — Student Starter</title>
+  <title>Age of Empires IV — Memory Match</title>
+  <!-- Serif display for headings and a clean UI font -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
   <main class="container">
     <header class="hud">
-      <h1>Memory Match</h1>
+      <h1>AOE4 Card Match</h1>
       <div class="stats">
         <span>Tries Remaining: <strong class="tries-remaining">10</strong></span>
-        <!-- TODO: (Stretch) Implement restart without reloading the page -->
+        <span class="timer">Time: <strong class="time-elapsed">0:00</strong></span>
+        <span class="best">Best: <strong class="best-time">—</strong></span>
+        <label>
+          Difficulty:
+          <select id="difficulty">
+            <option value="4x3">4×3 (Easy)</option>
+            <option value="4x4" selected>4×4 (Normal)</option>
+            <option value="5x4">5×4 (Hard)</option>
+          </select>
+        </label>
+
+        <!-- Restart without reload -->
         <button id="restart">Restart</button>
       </div>
     </header>
+    <!-- Modal used for win/loss and messages -->
+    <div id="modal" class="modal" aria-hidden="true">
+      <div class="modal-content">
+        <h2 class="modal-title"></h2>
+        <p class="modal-body"></p>
+        <div class="modal-actions">
+          <button id="modal-close">Close</button>
+          <button id="modal-restart">Play again</button>
+        </div>
+      </div>
+    </div>
     <section class="card-table" aria-label="Memory card grid"></section>
     <div class="star-wrapper" aria-hidden="true"></div>
   </main>

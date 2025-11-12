@@ -1,26 +1,43 @@
 [
   {
-    "name": "circle-red",
-    "image": "./images/circle-red"
+    "name": "spearman",
+    "image": "./images/spearman.png"
   },
   {
-    "name": "square-blue",
-    "image": "./images/square-blue"
+    "name": "archer",
+    "image": "./images/archer.png"
   },
   {
-    "name": "triangle-green",
-    "image": "./images/triangle-green"
+    "name": "crossbowman",
+    "image": "./images/crossbowman.png"
   },
   {
-    "name": "star-yellow",
-    "image": "./images/star-yellow"
+    "name": "knight",
+    "image": "./images/knight.png"
   },
   {
-    "name": "diamond-purple",
-    "image": "./images/diamond-purple"
+    "name": "scout",
+    "image": "./images/scout.png"
   },
   {
-    "name": "hex-teal",
-    "image": "./images/hex-teal"
+    "name": "villager",
+    "image": "./images/villager.png"
+  }
+  ,
+  {
+    "name": "man-at-arms",
+    "image": "./images/man-at-arms.png"
+  },
+  {
+    "name": "handcannoneer",
+    "image": "./images/handcannoneer.png"
+  },
+  {
+    "name": "horseman",
+    "image": "./images/horseman.png"
+  },
+  {
+    "name": "mangonel",
+    "image": "./images/mangonel.png"
   }
 ]
