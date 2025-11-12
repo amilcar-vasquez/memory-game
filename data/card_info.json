@@ -1,0 +1,26 @@
+[
+  {
+    "name": "circle-red",
+    "image": "./images/circle-red"
+  },
+  {
+    "name": "square-blue",
+    "image": "./images/square-blue"
+  },
+  {
+    "name": "triangle-green",
+    "image": "./images/triangle-green"
+  },
+  {
+    "name": "star-yellow",
+    "image": "./images/star-yellow"
+  },
+  {
+    "name": "diamond-purple",
+    "image": "./images/diamond-purple"
+  },
+  {
+    "name": "hex-teal",
+    "image": "./images/hex-teal"
+  }
+]
