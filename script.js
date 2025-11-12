@@ -42,9 +42,14 @@ function shuffle(arr) {
   // Your code here ↓
   const copy = [...arr];
   // TODO: loop i from copy.length - 1 down to 1
+  for (let i = copy.length - 1; i > 0; i--) {
   // TODO: generate j = Math.floor(Math.random() * (i + 1))
+    const j = Math.floor(Math.random() * (i + 1));
   // TODO: swap copy[i] and copy[j]
   return copy; // replace with real shuffled copy
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
 }
 
 // ------------- TODO #2: Deal cards to the DOM -------------
@@ -64,8 +69,29 @@ function dealCards(deck) {
   //   - append back & front into .card
   //   - add click listener -> flipCard
   //   - append .card to fragment
+  for (const cardInfo of deck) {
+    const card = document.createElement("div");
+    card.classList.add("card");
+    card.dataset.name = cardInfo.name;
+
+    const back = document.createElement("div");
+    back.classList.add("back");
+    const img = document.createElement("img");
+    img.classList.add("back-image");
+    img.src = `./images/${cardInfo.name}.svg`;
+    img.alt = cardInfo.name;
+    back.appendChild(img);
+
+    const front = document.createElement("div");
+    front.classList.add("front");
 
   // TODO: append fragment to cardTable
+    card.appendChild(back);
+    card.appendChild(front);
+    card.addEventListener("click", flipCard);
+    frag.appendChild(card);
+  }
+  cardTable.appendChild(frag);
 }
 
 // ------------- TODO #3: Flip logic & guarding -------------
@@ -77,14 +103,31 @@ function flipCard() {
   // - If firstCard is empty, set it and return.
   // - Otherwise, set secondCard, lock (noFlipping = true), and call checkForMatch().
 
-  // Your code here ↓
+  if (noFlipping) return;
+  this.classList.add("flipped");
+
+  if (this === firstCard) return;
+
+  if (!firstCard) {
+    firstCard = this;
+    return;
+  }
+
+  secondCard = this;
+  noFlipping = true;
+  checkForMatch();
 }
 
 // ------------- TODO #4: Decide match vs unflip -------------
 function checkForMatch() {
   // Compute isMatch by comparing dataset.name on firstCard and secondCard.
   // If match -> call matchCards(); else -> call unflipCards().
-  // Your code here ↓
+  const isMatch = firstCard.dataset.name === secondCard.dataset.name;
+  if (isMatch) {
+    matchCards();
+  } else {
+    unflipCards();
+  }
 }
 
 // ------------- TODO #5: Handle unflip + tries + lose -------------
@@ -95,7 +138,17 @@ function unflipCards() {
   // - otherwise remove "flipped" from both cards
   // - call resetFlags()
 
-  // Your code here ↓
+  setTimeout(() => {
+    triesRemaining--;
+    counter.textContent = triesRemaining;
+    if (triesRemaining === 0) {
+      showImageOverlay();
+      return;
+    }
+    firstCard.classList.remove("flipped");
+    secondCard.classList.remove("flipped");
+    resetFlags();
+  }, 900);
 }
 
 // ------------- TODO #6: Handle match + win -------------
@@ -105,7 +158,17 @@ function matchCards() {
   // - Set a green background on matched pairs (setCardBackground(card, "greenyellow")).
   // - Reset flags.
 
-  // Your code here ↓
+  winCounter--;
+  if (winCounter === 0) {
+    alert("You win!");
+    const starInterval = setInterval(createStar, 200);
+    setTimeout(() => clearInterval(starInterval), 5000);
+  }
+  firstCard.removeEventListener("click", flipCard);
+  secondCard.removeEventListener("click", flipCard);
+  setCardBackground(firstCard, "greenyellow");
+  setCardBackground(secondCard, "greenyellow");
+  resetFlags();
 }
 
 // Utility: set matched background color on the "back" face
@@ -124,7 +187,16 @@ function resetFlags() {
 function showImageOverlay() {
   // Create <div class="image-overlay"><img src="./images/loser.svg" alt="You lost"></div>
   // Append to body, then next frame set opacity to 1.
-  // Your code here ↓
+  const overlay = document.createElement("div");
+  overlay.classList.add("image-overlay");
+  const img = document.createElement("img");
+  img.src = "./images/loser.svg";
+  img.alt = "You lost";
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => {
+    overlay.style.opacity = "1";
+  });
 }
 
 // Celebration stars (provided)
